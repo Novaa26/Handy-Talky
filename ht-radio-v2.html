@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Aira HT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+:root{
+  --bg:#0c0d10; --surface:#15171b; --surface-2:#1c1f25; --border:#262a32;
+  --text:#eef0f3; --muted:#8b909c;
+  --accent:#8b7bff; --accent-soft:#2a2560;
+  --live:#39e07a; --talk:#ff5a4e; --talk-deep:#8f2a24;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+*{box-sizing:border-box;}
+html,body{height:100%;margin:0;}
+html{scroll-padding-top:env(safe-area-inset-top,0px);}
+body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;display:flex;justify-content:center;}
+.app{width:100%;max-width:430px;min-height:100vh;display:flex;flex-direction:column;}
+
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 8px;}
+.header h1{font-size:19px;margin:0;font-weight:600;letter-spacing:-0.2px;}
+.header .sub{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--muted);margin-top:2px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--muted);}
+.dot.on{background:var(--live);box-shadow:0 0 6px var(--live);}
+.gear{width:36px;height:36px;border-radius:11px;background:var(--surface);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--muted);cursor:pointer;}
+
+.lcd{margin:8px 18px 16px;padding:20px 20px 16px;border-radius:20px;
+  background:linear-gradient(155deg,var(--surface-2),var(--surface));border:1px solid var(--border);}
+.lcd-top{display:flex;align-items:baseline;justify-content:space-between;}
+.freq{font-family:'JetBrains Mono',monospace;font-size:38px;font-weight:500;letter-spacing:-1px;}
+.freq small{font-size:14px;color:var(--muted);margin-left:6px;font-weight:400;}
+.group-tag{font-size:12px;font-weight:600;color:var(--accent);background:var(--accent-soft);padding:5px 10px;border-radius:8px;white-space:nowrap;}
+.lcd-meta{display:flex;justify-content:space-between;align-items:center;margin-top:14px;}
+.peer-count{font-size:13px;color:var(--muted);}
+.peer-count b{color:var(--text);}
+.wave{display:flex;align-items:center;gap:3px;height:18px;}
+.wave i{width:3px;border-radius:2px;background:var(--border);display:block;transition:height .12s,background .12s;height:20%;}
+.wave.live i{background:var(--talk);}
+
+.tabs{display:flex;gap:6px;margin:0 18px 12px;background:var(--surface);padding:4px;border-radius:12px;border:1px solid var(--border);}
+.tab{flex:1;padding:9px 0;text-align:center;border:none;background:none;color:var(--muted);font-family:inherit;font-size:14px;font-weight:600;border-radius:9px;cursor:pointer;}
+.tab.active{background:var(--surface-2);color:var(--text);}
+
+.content{flex:1;overflow-y:auto;padding:0 18px 8px;}
+.section-title{font-size:12px;color:var(--muted);margin:6px 0 10px;font-weight:500;}
+
+.dial-row{display:flex;gap:8px;margin-bottom:12px;}
+.dial-row input{flex:1;min-width:0;background:var(--surface);border:1px solid var(--border);border-radius:12px;color:var(--text);
+  font-family:'JetBrains Mono',monospace;font-size:16px;padding:12px 14px;}
+.dial-row input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+.dial-row button{background:var(--accent);border:none;border-radius:12px;color:#0c0d10;font-family:inherit;font-weight:700;font-size:14px;padding:0 18px;cursor:pointer;}
+.step-row{display:flex;justify-content:center;gap:18px;margin:16px 0 4px;}
+.step-btn{width:52px;height:52px;border-radius:16px;background:var(--surface);border:1px solid var(--border);color:var(--text);font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.step-btn:active{background:var(--surface-2);}
+
+.card{padding:13px 14px;background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;}
+.card.tuned{border-color:var(--accent);}
+.card-name{font-size:15px;font-weight:600;}
+.card-meta{font-size:12px;color:var(--muted);font-family:'JetBrains Mono',monospace;margin-top:2px;}
+.card-dot{width:9px;height:9px;border-radius:50%;background:var(--border);flex-shrink:0;}
+.card-dot.online{background:var(--live);box-shadow:0 0 6px var(--live);}
+
+.scan-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.scan-btn{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:inherit;font-weight:600;font-size:13px;padding:8px 14px;border-radius:10px;cursor:pointer;}
+.scan-btn.on{border-color:var(--live);color:var(--live);}
+.scan-row{display:flex;justify-content:space-between;align-items:center;padding:10px 4px;font-family:'JetBrains Mono',monospace;font-size:14px;color:var(--muted);border-bottom:1px solid var(--border);}
+.scan-row.cur{color:var(--text);}
+.scan-row .st.live{color:var(--live);}
+
+.ptt-zone{padding:14px 18px 20px;display:flex;flex-direction:column;align-items:center;gap:10px;}
+.ptt{width:128px;height:128px;border-radius:50%;border:none;font-family:inherit;font-weight:700;font-size:15px;color:#fff;
+  background:linear-gradient(155deg,#ff6f63,var(--talk-deep));display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3;
+  box-shadow:0 8px 20px rgba(255,90,78,0.25);touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;}
+.ptt.active{background:linear-gradient(155deg,#ff8177,var(--talk));transform:scale(0.96);box-shadow:0 4px 14px rgba(255,90,78,0.4);}
+.hint{font-size:12px;color:var(--muted);text-align:center;}
+
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:flex-end;justify-content:center;z-index:20;}
+.modal-bg.open{display:flex;}
+.modal{width:100%;max-width:430px;background:var(--surface-2);border-radius:22px 22px 0 0;padding:22px 20px calc(24px + env(safe-area-inset-bottom,0px));border:1px solid var(--border);}
+.modal h2{margin:0 0 4px;font-size:18px;}
+.modal p{margin:0 0 16px;font-size:13px;color:var(--muted);line-height:1.5;}
+.field{margin-bottom:12px;}
+.field label{font-size:12px;color:var(--muted);display:block;margin-bottom:5px;}
+.field input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:10px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:13px;padding:10px 12px;}
+.modal-actions{display:flex;gap:8px;margin-top:16px;}
+.btn-primary{flex:1;background:var(--accent);border:none;border-radius:12px;color:#0c0d10;font-family:inherit;font-weight:700;font-size:14px;padding:12px;cursor:pointer;}
+.btn-ghost{flex:1;background:none;border:1px solid var(--border);border-radius:12px;color:var(--text);font-family:inherit;font-weight:600;font-size:14px;padding:12px;cursor:pointer;}
+.status-line{font-size:12px;margin-top:10px;color:var(--muted);}
+::-webkit-scrollbar{width:0;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div>
+      <h1>Aira HT</h1>
+      <div class="sub"><span class="dot" id="connDot"></span><span id="connText">Belum terhubung</span></div>
+    </div>
+    <div class="gear" id="gearBtn">⚙</div>
+  </div>
+
+  <div class="lcd">
+    <div class="lcd-top">
+      <div><span class="freq" id="lcdFreq">145.700</span><small>MHz</small></div>
+      <div class="group-tag" id="lcdGroup">RONDA-1</div>
+    </div>
+    <div class="lcd-meta">
+      <div class="peer-count" id="peerCount"><b>0</b> orang online</div>
+      <div class="wave" id="wave"><i></i><i></i><i></i><i></i><i></i></div>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-t="manual">Manual</button>
+    <button class="tab" data-t="scan">Scan</button>
+    <button class="tab" data-t="grup">Grup</button>
+  </div>
+
+  <div class="content">
+    <div class="tp" id="tp-manual">
+      <div class="dial-row">
+        <input id="freqInput" inputmode="decimal" value="145.700">
+        <button id="tuneBtn">Tune</button>
+      </div>
+      <div class="step-row">
+        <div class="step-btn" id="down">−0.1</div>
+        <div class="step-btn" id="up">+0.1</div>
+      </div>
+    </div>
+
+    <div class="tp" id="tp-scan" style="display:none;">
+      <div class="scan-hd">
+        <div class="section-title" style="margin:0;">Pindai frekuensi</div>
+        <button class="scan-btn" id="scanBtn">Mulai</button>
+      </div>
+      <div id="scanList"></div>
+    </div>
+
+    <div class="tp" id="tp-grup" style="display:none;">
+      <div class="section-title">Pilih channel untuk terhubung</div>
+      <div id="groupList"></div>
+    </div>
+  </div>
+
+  <div class="ptt-zone">
+    <button class="ptt" id="pttBtn">TAHAN<br>BICARA</button>
+    <div class="hint" id="pttHint">Belum tersambung ke server realtime</div>
+  </div>
+
+</div>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h2>Sambungkan server</h2>
+    <p>Buat project gratis di supabase.com (fitur Realtime aktif otomatis, tidak perlu bikin tabel). Tempel URL &amp; anon key dari Settings → API di sana.</p>
+    <div class="field"><label>Nama kamu</label><input id="cfgName" placeholder="Dyaz"></div>
+    <div class="field"><label>Supabase URL</label><input id="cfgUrl" placeholder="https://xxxx.supabase.co"></div>
+    <div class="field"><label>Anon key</label><input id="cfgKey" placeholder="eyJhbGciOi..."></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" id="cfgCancel">Tutup</button>
+      <button class="btn-primary" id="cfgSave">Simpan &amp; sambung</button>
+    </div>
+    <div class="status-line" id="cfgStatus"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const roster = [
+    {freq:"145.700", group:"RONDA-1", name:"Pos Ronda Blok A"},
+    {freq:"145.700", group:"RONDA-2", name:"Pos Ronda Blok C"},
+    {freq:"145.800", group:"OJOL-1",  name:"Koordinator Ojol"},
+    {freq:"146.000", group:"BASECAMP",name:"Basecamp Pendakian"},
+    {freq:"146.200", group:"EVENT-1", name:"Panitia Lapangan"},
+    {freq:"433.500", group:"KELUARGA",name:"Grup Keluarga"},
+  ];
+  const freqsUnique = [...new Set(roster.map(r=>r.freq))].sort((a,b)=>parseFloat(a)-parseFloat(b));
+  const chanKey = (f,g) => 'ht_' + f.replace('.','_') + '_' + g;
+  const myId = 'p' + Math.random().toString(36).slice(2,10);
+
+  let sb = null, cfg = {name:'', url:'', key:''};
+  let current = {freq:"145.700", group:"RONDA-1"};
+  let presenceCh = null;
+  let peers = {}; // id -> {pc, audioEl}
+  let localStream = null;
+  let scanning = false, scanTimer = null, scanPresence = {};
+
+  // ---- persisted config (per-viewer convenience only) ----
+  try{
+    const saved = JSON.parse(localStorage.getItem('aira_ht_cfg') || 'null');
+    if(saved){ cfg = saved; document.getElementById('cfgName').value=cfg.name||''; document.getElementById('cfgUrl').value=cfg.url||''; document.getElementById('cfgKey').value=cfg.key||''; }
+  }catch(e){}
+
+  const $ = id => document.getElementById(id);
+  const connDot = $('connDot'), connText = $('connText'), pttHint = $('pttHint');
+
+  function setConnected(ok, msg){
+    connDot.classList.toggle('on', ok);
+    connText.textContent = msg;
+  }
+
+  function connectSupabase(){
+    if(!cfg.url || !cfg.key){ setConnected(false, 'Belum terhubung'); return; }
+    try{
+      sb = window.supabase.createClient(cfg.url, cfg.key);
+      setConnected(true, 'Terhubung sebagai ' + (cfg.name || myId));
+      pttHint.textContent = 'Tersambung ke ' + current.group + ' · ' + current.freq + ' MHz';
+      joinChannel(current.freq, current.group);
+      subscribeScanPresenceAll();
+    }catch(e){
+      setConnected(false, 'Gagal terhubung');
+    }
+  }
+  connectSupabase();
+
+  // ---- modal ----
+  $('gearBtn').addEventListener('click', ()=> $('modalBg').classList.add('open'));
+  $('cfgCancel').addEventListener('click', ()=> $('modalBg').classList.remove('open'));
+  $('cfgSave').addEventListener('click', ()=>{
+    cfg = {name:$('cfgName').value.trim(), url:$('cfgUrl').value.trim(), key:$('cfgKey').value.trim()};
+    try{ localStorage.setItem('aira_ht_cfg', JSON.stringify(cfg)); }catch(e){}
+    $('cfgStatus').textContent = 'Menyambung...';
+    connectSupabase();
+    setTimeout(()=>{ $('modalBg').classList.remove('open'); }, 400);
+  });
+
+  // ---- tabs ----
+  document.querySelectorAll('.tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.tp').forEach(p=>p.style.display='none');
+      tab.classList.add('active');
+      $('tp-'+tab.dataset.t).style.display='block';
+    });
+  });
+
+  // ---- manual tune ----
+  function refreshLcd(){
+    $('lcdFreq').textContent = current.freq;
+    $('lcdGroup').textContent = current.group;
+    $('freqInput').value = current.freq;
+    pttHint.textContent = sb ? ('Tersambung ke ' + current.group + ' · ' + current.freq + ' MHz') : 'Belum tersambung ke server realtime';
+    renderGroupList();
+  }
+  function tuneTo(freq, group){
+    current = {freq, group};
+    refreshLcd();
+    if(sb) joinChannel(freq, group);
+  }
+  $('tuneBtn').addEventListener('click', ()=>{
+    let v = parseFloat($('freqInput').value.replace(',', '.'));
+    if(isNaN(v)) return;
+    const f = v.toFixed(3);
+    const entry = roster.find(r=>r.freq===f);
+    tuneTo(f, entry ? entry.group : 'MANUAL');
+  });
+  $('up').addEventListener('click', ()=> stepFreq(0.1));
+  $('down').addEventListener('click', ()=> stepFreq(-0.1));
+  function stepFreq(d){
+    const f = Math.max(100, parseFloat(current.freq)+d).toFixed(3);
+    const entry = roster.find(r=>r.freq===f);
+    tuneTo(f, entry ? entry.group : 'MANUAL');
+  }
+
+  // ---- group list ----
+  function renderGroupList(){
+    const list = $('groupList'); list.innerHTML = '';
+    roster.forEach(r=>{
+      const on = scanPresence[chanKey(r.freq,r.group)] > 0;
+      const el = document.createElement('div');
+      el.className = 'card' + (r.freq===current.freq && r.group===current.group ? ' tuned':'');
+      el.innerHTML = `<div><div class="card-name">${r.name}</div><div class="card-meta">${r.freq} MHz · ${r.group}</div></div><div class="card-dot ${on?'online':''}"></div>`;
+      el.addEventListener('click', ()=> tuneTo(r.freq, r.group));
+      list.appendChild(el);
+    });
+  }
+
+  // ---- scan tab: lightweight presence peek on every channel ----
+  function subscribeScanPresenceAll(){
+    freqsUnique.forEach(f=>{
+      roster.filter(r=>r.freq===f).forEach(r=>{
+        const key = chanKey(r.freq, r.group);
+        const ch = sb.channel('scan_'+key, {config:{presence:{key:myId+'_scan'}}});
+        ch.on('presence',{event:'sync'}, ()=>{
+          const state = ch.presenceState();
+          scanPresence[key] = Object.keys(state).length;
+          renderScanList(); renderGroupList();
+        });
+        ch.subscribe();
+      });
+    });
+  }
+  function renderScanList(){
+    const list = $('scanList'); list.innerHTML = '';
+    freqsUnique.forEach(f=>{
+      const groupsHere = roster.filter(r=>r.freq===f);
+      const on = groupsHere.some(r => (scanPresence[chanKey(r.freq,r.group)]||0) > 0);
+      const row = document.createElement('div');
+      row.className = 'scan-row' + (f===current.freq?' cur':'');
+      row.innerHTML = `<span>${f}</span><span class="st ${on?'live':''}">${on?'● AKTIF':'—'}</span>`;
+      list.appendChild(row);
+    });
+  }
+  renderScanList();
+  $('scanBtn').addEventListener('click', function(){
+    scanning = !scanning;
+    this.textContent = scanning ? 'Berhenti' : 'Mulai';
+    this.classList.toggle('on', scanning);
+  });
+
+  // ---- realtime channel join: presence + broadcast signaling + WebRTC mesh ----
+  function leaveChannel(){
+    Object.values(peers).forEach(p=>{ try{p.pc.close();}catch(e){} try{p.audioEl.remove();}catch(e){} });
+    peers = {};
+    if(presenceCh){ sb.removeChannel(presenceCh); presenceCh = null; }
+  }
+
+  function joinChannel(freq, group){
+    leaveChannel();
+    const key = chanKey(freq, group);
+    const ch = sb.channel(key, {config:{presence:{key:myId}}});
+
+    ch.on('presence', {event:'sync'}, ()=>{
+      const state = ch.presenceState();
+      const ids = Object.keys(state).filter(id=>id!==myId);
+      $('peerCount').innerHTML = '<b>'+(ids.length+1)+'</b> orang online';
+      ids.forEach(id=>{ if(!peers[id]) createPeer(id, true); });
+      Object.keys(peers).forEach(id=>{ if(!ids.includes(id)){ peers[id].pc.close(); peers[id].audioEl.remove(); delete peers[id]; } });
+    });
+
+    ch.on('broadcast', {event:'signal'}, ({payload})=>{
+      if(payload.to !== myId) return;
+      handleSignal(payload.from, payload.data);
+    });
+
+    ch.on('broadcast', {event:'talk'}, ({payload})=>{
+      setWaveLive(payload.state === 'on');
+    });
+
+    ch.subscribe(async (status)=>{
+      if(status === 'SUBSCRIBED'){ await ch.track({id:myId, name: cfg.name||myId}); }
+    });
+
+    presenceCh = ch;
+  }
+
+  async function ensureMic(){
+    if(localStream) return localStream;
+    localStream = await navigator.mediaDevices.getUserMedia({audio:true});
+    localStream.getAudioTracks().forEach(t=> t.enabled = false);
+    return localStream;
+  }
+
+  async function createPeer(peerId, isInitiator){
+    const pc = new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});
+    const audioEl = document.createElement('audio'); audioEl.autoplay = true; document.body.appendChild(audioEl);
+    peers[peerId] = {pc, audioEl};
+
+    try{ const stream = await ensureMic(); stream.getTracks().forEach(t=> pc.addTrack(t, stream)); }catch(e){}
+
+    pc.ontrack = (e)=>{ audioEl.srcObject = e.streams[0]; };
+    pc.onicecandidate = (e)=>{
+      if(e.candidate) sendSignal(peerId, {candidate:e.candidate});
+    };
+
+    if(isInitiator){
+      const offer = await pc.createOffer();
+      await pc.setLocalDescription(offer);
+      sendSignal(peerId, {sdp:offer});
+    }
+    return pc;
+  }
+
+  function sendSignal(to, data){
+    presenceCh.send({type:'broadcast', event:'signal', payload:{to, from:myId, data}});
+  }
+
+  async function handleSignal(from, data){
+    let entry = peers[from];
+    if(!entry){ const pc = await createPeer(from, false); entry = peers[from]; }
+    const pc = entry.pc;
+    if(data.sdp){
+      await pc.setRemoteDescription(new RTCSessionDescription(data.sdp));
+      if(data.sdp.type === 'offer'){
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        sendSignal(from, {sdp:answer});
+      }
+    } else if(data.candidate){
+      try{ await pc.addIceCandidate(data.candidate); }catch(e){}
+    }
+  }
+
+  // ---- PTT ----
+  function setWaveLive(on){
+    const bars = document.querySelectorAll('#wave i');
+    $('wave').classList.toggle('live', on);
+    bars.forEach(b=> b.style.height = on ? (20+Math.random()*80)+'%' : '20%');
+    if(on){
+      clearInterval(setWaveLive._t);
+      setWaveLive._t = setInterval(()=> bars.forEach(b=> b.style.height=(15+Math.random()*85)+'%'), 140);
+    } else { clearInterval(setWaveLive._t); }
+  }
+
+  async function pttOn(e){
+    e.preventDefault();
+    if(!sb){ $('modalBg').classList.add('open'); return; }
+    $('pttBtn').classList.add('active'); $('pttBtn').textContent = 'ON AIR';
+    try{
+      const stream = await ensureMic();
+      stream.getAudioTracks().forEach(t=> t.enabled = true);
+    }catch(e){}
+    setWaveLive(true);
+    if(presenceCh) presenceCh.send({type:'broadcast', event:'talk', payload:{state:'on'}});
+  }
+  function pttOff(){
+    $('pttBtn').classList.remove('active'); $('pttBtn').innerHTML = 'TAHAN<br>BICARA';
+    if(localStream) localStream.getAudioTracks().forEach(t=> t.enabled = false);
+    setWaveLive(false);
+    if(presenceCh) presenceCh.send({type:'broadcast', event:'talk', payload:{state:'off'}});
+  }
+  const pttBtn = $('pttBtn');
+  pttBtn.addEventListener('mousedown', pttOn);
+  pttBtn.addEventListener('touchstart', pttOn, {passive:false});
+  ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev=> pttBtn.addEventListener(ev, pttOff));
+
+  refreshLcd();
+})();
+</script>
+</body>
+</html>
